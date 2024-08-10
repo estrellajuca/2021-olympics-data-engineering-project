@@ -1,0 +1,25 @@
+{
+	"name": "2021OlympicsDB",
+	"properties": {
+		"Name": "2021OlympicsDB",
+		"EntityType": "DATABASE",
+		"Origin": {
+			"Type": "SPARK"
+		},
+		"Properties": {
+			"IsSyMSCDMDatabase": true
+		},
+		"Source": {
+			"Provider": "ADLS",
+			"Location": "abfss://2021-olympic-data@2021olympicsstorage.dfs.core.windows.net/2021OlympicsDB",
+			"Properties": {
+				"FormatType": "csv",
+				"LinkedServiceName": "2021-olympics-sy-WorkspaceDefaultStorage"
+			}
+		},
+		"PublishStatus": "PUBLISHED",
+		"ObjectVersion": 7,
+		"ObjectId": "71c464d2-fd44-4e38-a55e-0410b8b2649b"
+	},
+	"type": "DATABASE"
+}
