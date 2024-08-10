@@ -1,0 +1,892 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"workspaceName": {
+			"type": "string",
+			"metadata": "Workspace name",
+			"defaultValue": "2021-olympics-sy"
+		},
+		"2021-olympics-sy-WorkspaceDefaultSqlServer_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of '2021-olympics-sy-WorkspaceDefaultSqlServer'",
+			"defaultValue": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=tcp:2021-olympics-sy.sql.azuresynapse.net,1433;Initial Catalog=@{linkedService().DBName}"
+		},
+		"2021-olympics-sy-WorkspaceDefaultStorage_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://2021olympicsstorage.dfs.core.windows.net"
+		}
+	},
+	"variables": {
+		"workspaceId": "[concat('Microsoft.Synapse/workspaces/', parameters('workspaceName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('workspaceName'), '/2021-olympics-sy-WorkspaceDefaultSqlServer')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"parameters": {
+					"DBName": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlDW",
+				"typeProperties": {
+					"connectionString": "[parameters('2021-olympics-sy-WorkspaceDefaultSqlServer_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/2021-olympics-sy-WorkspaceDefaultStorage')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('2021-olympics-sy-WorkspaceDefaultStorage_properties_typeProperties_url')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/AutoResolveIntegrationRuntime')]",
+			"type": "Microsoft.Synapse/workspaces/integrationRuntimes",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "Managed",
+				"typeProperties": {
+					"computeProperties": {
+						"location": "AutoResolve",
+						"dataFlowProperties": {
+							"computeType": "General",
+							"coreCount": 8,
+							"timeToLive": 0
+						}
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/WorkspaceSystemIdentity')]",
+			"type": "Microsoft.Synapse/workspaces/credentials",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "ManagedIdentity",
+				"typeProperties": {}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/atheltes_scripts')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "-- Number of athletes by country\nSELECT Country, count(*) as Number_of_Athletes\nFROM athletes\nGROUP BY Country\nORDER BY count(*) DESC;\n\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "2021OlympicsDB",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/2021OlympicsDB')]",
+			"type": "Microsoft.Synapse/workspaces/databases",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"Ddls": [
+					{
+						"ActionType": "CREATE",
+						"OldEntity": null,
+						"NewEntity": {
+							"Name": "2021OlympicsDB",
+							"EntityType": "DATABASE",
+							"Origin": {
+								"Type": "SPARK"
+							},
+							"Properties": {
+								"IsSyMSCDMDatabase": true
+							},
+							"Source": {
+								"Provider": "ADLS",
+								"Location": "abfss://2021-olympic-data@2021olympicsstorage.dfs.core.windows.net/2021OlympicsDB",
+								"Properties": {
+									"FormatType": "csv",
+									"LinkedServiceName": "2021-olympics-sy-WorkspaceDefaultStorage"
+								}
+							},
+							"PublishStatus": "PUBLISHED",
+							"ObjectVersion": 7,
+							"ObjectId": "71c464d2-fd44-4e38-a55e-0410b8b2649b"
+						},
+						"Source": {
+							"Type": "SPARK"
+						}
+					},
+					{
+						"ActionType": "CREATE",
+						"OldEntity": null,
+						"NewEntity": {
+							"Name": "athletes",
+							"EntityType": "TABLE",
+							"TableType": "EXTERNAL",
+							"Namespace": {
+								"SchemaName": null,
+								"DatabaseName": "2021OlympicsDB",
+								"DatabaseId": null
+							},
+							"Partitioning": {
+								"PartitionFunctionType": null,
+								"Keys": null
+							},
+							"StorageDescriptor": {
+								"Distribution": null,
+								"Columns": [
+									{
+										"Name": "PersonName",
+										"Description": null,
+										"OriginDataTypeName": {
+											"TypeName": "string",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Length": 8000,
+											"Precision": 0,
+											"Scale": 0,
+											"Properties": {
+												"HIVE_TYPE_STRING": "string"
+											}
+										}
+									},
+									{
+										"Name": "Country",
+										"Description": null,
+										"OriginDataTypeName": {
+											"TypeName": "string",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Length": 8000,
+											"Precision": 0,
+											"Scale": 0,
+											"Properties": {
+												"HIVE_TYPE_STRING": "string"
+											}
+										}
+									},
+									{
+										"Name": "Discipline",
+										"Description": null,
+										"OriginDataTypeName": {
+											"TypeName": "string",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Length": 8000,
+											"Precision": 0,
+											"Scale": 0,
+											"Properties": {
+												"HIVE_TYPE_STRING": "string"
+											}
+										}
+									}
+								],
+								"ColumnSetEntityName": "c695815c-cb53-417a-b0ed-c714e97ef091",
+								"Format": {
+									"InputFormat": "org.apache.hadoop.mapred.SequenceFileInputFormat",
+									"OutputFormat": "org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat",
+									"FormatType": "csv",
+									"SerializeLib": "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe",
+									"Properties": {
+										"path": "abfss://2021-olympic-data@2021olympicsstorage.dfs.core.windows.net/transformed-data/athletes/part-00000-tid-892112819068063635-1bed217a-0b77-40da-a316-9f95b6a638b8-26-1-c000.csv",
+										"delimiter": ",",
+										"firstRowAsHeader": "true",
+										"multiLine": "false",
+										"serialization.format": "1",
+										"FormatTypeSetToDatabaseDefault": false,
+										"header": "true"
+									}
+								},
+								"Source": {
+									"Provider": "ADLS",
+									"Location": "abfss://2021-olympic-data@2021olympicsstorage.dfs.core.windows.net/transformed-data/athletes/part-00000-tid-892112819068063635-1bed217a-0b77-40da-a316-9f95b6a638b8-26-1-c000.csv",
+									"Properties": {
+										"LinkedServiceName": "2021-olympics-sy-WorkspaceDefaultStorage",
+										"LocationSetToDatabaseDefault": false
+									}
+								},
+								"Properties": {
+									"textinputformat.record.delimiter": ",",
+									"compression": "",
+									"derivedModelAttributeInfo": "{\"attributeReferences\":{}}"
+								},
+								"Compressed": false,
+								"SerDeInfo": null,
+								"IsStoredAsSubdirectories": false
+							},
+							"Owner": null,
+							"CreateTime": 0,
+							"LastAccessTime": 0,
+							"Retention": 0,
+							"Temporary": false,
+							"IsRewriteEnabled": false,
+							"ViewOriginalText": null,
+							"ViewExpandedText": null,
+							"Origin": {
+								"Type": "SPARK"
+							},
+							"OriginObjectId": null,
+							"IsSharedEntity": false,
+							"PublishStatus": "PUBLISHED",
+							"Properties": {
+								"Description": "",
+								"DisplayFolderInfo": "{\"name\":\"Others\",\"colorCode\":\"\"}",
+								"PrimaryKeys": "",
+								"spark.sql.sources.provider": "csv",
+								"spark.sql.sources.schema.numParts": "1",
+								"spark.sql.sources.schema.part.0": "{\"type\":\"struct\",\"fields\":[{\"name\":\"PersonName\",\"type\":\"string\",\"nullable\":true,\"metadata\":{}},{\"name\":\"Country\",\"type\":\"string\",\"nullable\":true,\"metadata\":{}},{\"name\":\"Discipline\",\"type\":\"string\",\"nullable\":true,\"metadata\":{}}]}"
+							},
+							"ObjectVersion": 1,
+							"ObjectId": "f19b5cdf-0e4a-48e1-a610-9da8cd2ae394",
+							"Description": ""
+						},
+						"Source": {
+							"Type": "SPARK"
+						}
+					},
+					{
+						"ActionType": "CREATE",
+						"OldEntity": null,
+						"NewEntity": {
+							"Name": "coaches",
+							"EntityType": "TABLE",
+							"TableType": "EXTERNAL",
+							"Namespace": {
+								"SchemaName": null,
+								"DatabaseName": "2021OlympicsDB",
+								"DatabaseId": null
+							},
+							"StorageDescriptor": {
+								"Distribution": null,
+								"Columns": [
+									{
+										"Name": "Name",
+										"Description": null,
+										"OriginDataTypeName": {
+											"TypeName": "string",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Length": 8000,
+											"Precision": 0,
+											"Scale": 0,
+											"Properties": {
+												"HIVE_TYPE_STRING": "string"
+											}
+										}
+									},
+									{
+										"Name": "Country",
+										"Description": null,
+										"OriginDataTypeName": {
+											"TypeName": "string",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Length": 8000,
+											"Precision": 0,
+											"Scale": 0,
+											"Properties": {
+												"HIVE_TYPE_STRING": "string"
+											}
+										}
+									},
+									{
+										"Name": "Discipline",
+										"Description": null,
+										"OriginDataTypeName": {
+											"TypeName": "string",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Length": 8000,
+											"Precision": 0,
+											"Scale": 0,
+											"Properties": {
+												"HIVE_TYPE_STRING": "string"
+											}
+										}
+									},
+									{
+										"Name": "Event",
+										"Description": null,
+										"OriginDataTypeName": {
+											"TypeName": "string",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Length": 8000,
+											"Precision": 0,
+											"Scale": 0,
+											"Properties": {
+												"HIVE_TYPE_STRING": "string"
+											}
+										}
+									}
+								],
+								"ColumnSetEntityName": "1c874048-1ced-4f29-b299-7c0f068046ee",
+								"Format": {
+									"InputFormat": "org.apache.hadoop.mapred.SequenceFileInputFormat",
+									"OutputFormat": "org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat",
+									"FormatType": "csv",
+									"SerializeLib": "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe",
+									"Properties": {
+										"path": "abfss://2021-olympic-data@2021olympicsstorage.dfs.core.windows.net/transformed-data/coaches/part-00000-tid-962732772300734819-33ea685c-cfca-475a-9d22-c114807e1185-28-1-c000.csv",
+										"delimiter": ",",
+										"firstRowAsHeader": "true",
+										"multiLine": "false",
+										"serialization.format": "1",
+										"FormatTypeSetToDatabaseDefault": false,
+										"header": "true"
+									}
+								},
+								"Source": {
+									"Provider": "ADLS",
+									"Location": "abfss://2021-olympic-data@2021olympicsstorage.dfs.core.windows.net/transformed-data/coaches/part-00000-tid-962732772300734819-33ea685c-cfca-475a-9d22-c114807e1185-28-1-c000.csv",
+									"Properties": {
+										"LinkedServiceName": "2021-olympics-sy-WorkspaceDefaultStorage",
+										"LocationSetToDatabaseDefault": false
+									}
+								},
+								"Properties": {
+									"textinputformat.record.delimiter": ",",
+									"compression": "",
+									"derivedModelAttributeInfo": "{\"attributeReferences\":{}}"
+								},
+								"Compressed": false,
+								"SerDeInfo": null,
+								"IsStoredAsSubdirectories": false
+							},
+							"Owner": null,
+							"CreateTime": 0,
+							"LastAccessTime": 0,
+							"Retention": 0,
+							"Temporary": false,
+							"IsRewriteEnabled": false,
+							"ViewOriginalText": null,
+							"ViewExpandedText": null,
+							"Origin": {
+								"Type": "SPARK"
+							},
+							"OriginObjectId": null,
+							"IsSharedEntity": false,
+							"PublishStatus": "PUBLISHED",
+							"Properties": {
+								"Description": "",
+								"DisplayFolderInfo": "{\"name\":\"Others\",\"colorCode\":\"\"}",
+								"PrimaryKeys": "",
+								"spark.sql.sources.provider": "csv",
+								"spark.sql.sources.schema.numParts": "1",
+								"spark.sql.sources.schema.part.0": "{\"type\":\"struct\",\"fields\":[{\"name\":\"Name\",\"type\":\"string\",\"nullable\":true,\"metadata\":{}},{\"name\":\"Country\",\"type\":\"string\",\"nullable\":true,\"metadata\":{}},{\"name\":\"Discipline\",\"type\":\"string\",\"nullable\":true,\"metadata\":{}},{\"name\":\"Event\",\"type\":\"string\",\"nullable\":true,\"metadata\":{}}]}"
+							},
+							"ObjectVersion": 1,
+							"ObjectId": "80d1a0c9-f162-467d-88e6-ded2086a36c1",
+							"Description": ""
+						},
+						"Source": {
+							"Type": "SPARK"
+						}
+					},
+					{
+						"ActionType": "CREATE",
+						"OldEntity": null,
+						"NewEntity": {
+							"Name": "entriesgender",
+							"EntityType": "TABLE",
+							"TableType": "EXTERNAL",
+							"Namespace": {
+								"SchemaName": null,
+								"DatabaseName": "2021OlympicsDB",
+								"DatabaseId": null
+							},
+							"Partitioning": {
+								"PartitionFunctionType": null,
+								"Keys": null
+							},
+							"StorageDescriptor": {
+								"Distribution": null,
+								"Columns": [
+									{
+										"Name": "Discipline",
+										"Description": null,
+										"OriginDataTypeName": {
+											"TypeName": "string",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Length": 8000,
+											"Precision": 0,
+											"Scale": 0,
+											"Properties": {
+												"HIVE_TYPE_STRING": "string"
+											}
+										}
+									},
+									{
+										"Name": "Female",
+										"Description": null,
+										"OriginDataTypeName": {
+											"TypeName": "long",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Length": 0,
+											"Precision": 0,
+											"Scale": 0,
+											"Properties": {
+												"HIVE_TYPE_STRING": "long"
+											}
+										}
+									},
+									{
+										"Name": "Male",
+										"Description": null,
+										"OriginDataTypeName": {
+											"TypeName": "long",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Length": 0,
+											"Precision": 0,
+											"Scale": 0,
+											"Properties": {
+												"HIVE_TYPE_STRING": "long"
+											}
+										}
+									},
+									{
+										"Name": "Total",
+										"Description": null,
+										"OriginDataTypeName": {
+											"TypeName": "long",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Length": 0,
+											"Precision": 0,
+											"Scale": 0,
+											"Properties": {
+												"HIVE_TYPE_STRING": "long"
+											}
+										}
+									}
+								],
+								"ColumnSetEntityName": "9e94dcbd-2aed-4c31-ae52-ef9aa231b918",
+								"Format": {
+									"InputFormat": "org.apache.hadoop.mapred.SequenceFileInputFormat",
+									"OutputFormat": "org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat",
+									"FormatType": "csv",
+									"SerializeLib": "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe",
+									"Properties": {
+										"path": "abfss://2021-olympic-data@2021olympicsstorage.dfs.core.windows.net/transformed-data/entriesgender/part-00000-tid-4091607257361671866-72f950c4-78d4-47a5-833d-3c742a918ce4-30-1-c000.csv",
+										"delimiter": ",",
+										"firstRowAsHeader": "true",
+										"multiLine": "false",
+										"serialization.format": "1",
+										"FormatTypeSetToDatabaseDefault": false,
+										"header": "true"
+									}
+								},
+								"Source": {
+									"Provider": "ADLS",
+									"Location": "abfss://2021-olympic-data@2021olympicsstorage.dfs.core.windows.net/transformed-data/entriesgender/part-00000-tid-4091607257361671866-72f950c4-78d4-47a5-833d-3c742a918ce4-30-1-c000.csv",
+									"Properties": {
+										"LinkedServiceName": "2021-olympics-sy-WorkspaceDefaultStorage",
+										"LocationSetToDatabaseDefault": false
+									}
+								},
+								"Properties": {
+									"textinputformat.record.delimiter": ",",
+									"compression": "",
+									"derivedModelAttributeInfo": "{\"attributeReferences\":{}}"
+								},
+								"Compressed": false,
+								"SerDeInfo": null,
+								"IsStoredAsSubdirectories": false
+							},
+							"Owner": null,
+							"CreateTime": 0,
+							"LastAccessTime": 0,
+							"Retention": 0,
+							"Temporary": false,
+							"IsRewriteEnabled": false,
+							"ViewOriginalText": null,
+							"ViewExpandedText": null,
+							"Origin": {
+								"Type": "SPARK"
+							},
+							"OriginObjectId": null,
+							"IsSharedEntity": false,
+							"PublishStatus": "PUBLISHED",
+							"Properties": {
+								"Description": "",
+								"DisplayFolderInfo": "{\"name\":\"Others\",\"colorCode\":\"\"}",
+								"PrimaryKeys": "",
+								"spark.sql.sources.provider": "csv",
+								"spark.sql.sources.schema.numParts": "1",
+								"spark.sql.sources.schema.part.0": "{\"type\":\"struct\",\"fields\":[{\"name\":\"Discipline\",\"type\":\"string\",\"nullable\":true,\"metadata\":{}},{\"name\":\"Female\",\"type\":\"long\",\"nullable\":true,\"metadata\":{}},{\"name\":\"Male\",\"type\":\"long\",\"nullable\":true,\"metadata\":{}},{\"name\":\"Total\",\"type\":\"long\",\"nullable\":true,\"metadata\":{}}]}"
+							},
+							"ObjectVersion": 2,
+							"ObjectId": "fe95bb76-289e-4b5a-a2d7-ce592e4b7336",
+							"Description": ""
+						},
+						"Source": {
+							"Type": "SPARK"
+						}
+					},
+					{
+						"ActionType": "CREATE",
+						"OldEntity": null,
+						"NewEntity": {
+							"Name": "medals",
+							"EntityType": "TABLE",
+							"TableType": "EXTERNAL",
+							"Namespace": {
+								"SchemaName": null,
+								"DatabaseName": "2021OlympicsDB",
+								"DatabaseId": null
+							},
+							"Partitioning": {
+								"PartitionFunctionType": null,
+								"Keys": null
+							},
+							"StorageDescriptor": {
+								"Distribution": null,
+								"Columns": [
+									{
+										"Name": "Rank",
+										"Description": null,
+										"OriginDataTypeName": {
+											"TypeName": "long",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Length": 0,
+											"Precision": 0,
+											"Scale": 0,
+											"Properties": {
+												"HIVE_TYPE_STRING": "long"
+											}
+										}
+									},
+									{
+										"Name": "TeamCountry",
+										"Description": null,
+										"OriginDataTypeName": {
+											"TypeName": "string",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Length": 8000,
+											"Precision": 0,
+											"Scale": 0,
+											"Properties": {
+												"HIVE_TYPE_STRING": "string"
+											}
+										}
+									},
+									{
+										"Name": "Gold",
+										"Description": null,
+										"OriginDataTypeName": {
+											"TypeName": "long",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Length": 0,
+											"Precision": 0,
+											"Scale": 0,
+											"Properties": {
+												"HIVE_TYPE_STRING": "long"
+											}
+										}
+									},
+									{
+										"Name": "Silver",
+										"Description": null,
+										"OriginDataTypeName": {
+											"TypeName": "long",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Length": 0,
+											"Precision": 0,
+											"Scale": 0,
+											"Properties": {
+												"HIVE_TYPE_STRING": "long"
+											}
+										}
+									},
+									{
+										"Name": "Bronze",
+										"Description": null,
+										"OriginDataTypeName": {
+											"TypeName": "long",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Length": 0,
+											"Precision": 0,
+											"Scale": 0,
+											"Properties": {
+												"HIVE_TYPE_STRING": "long"
+											}
+										}
+									},
+									{
+										"Name": "Total",
+										"Description": null,
+										"OriginDataTypeName": {
+											"TypeName": "long",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Length": 0,
+											"Precision": 0,
+											"Scale": 0,
+											"Properties": {
+												"HIVE_TYPE_STRING": "long"
+											}
+										}
+									},
+									{
+										"Name": "RankbyTotal",
+										"Description": null,
+										"OriginDataTypeName": {
+											"TypeName": "long",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Length": 0,
+											"Precision": 0,
+											"Scale": 0,
+											"Properties": {
+												"HIVE_TYPE_STRING": "long"
+											}
+										}
+									}
+								],
+								"ColumnSetEntityName": "a93c9167-3df4-457f-9cb6-bd17f9c19e9e",
+								"Format": {
+									"InputFormat": "org.apache.hadoop.mapred.SequenceFileInputFormat",
+									"OutputFormat": "org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat",
+									"FormatType": "csv",
+									"SerializeLib": "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe",
+									"Properties": {
+										"path": "abfss://2021-olympic-data@2021olympicsstorage.dfs.core.windows.net/transformed-data/medals/part-00000-tid-4940459730667992049-dfb4cc65-c796-4de4-b151-6d4bdb249073-32-1-c000.csv",
+										"delimiter": ",",
+										"firstRowAsHeader": "true",
+										"multiLine": "false",
+										"serialization.format": "1",
+										"FormatTypeSetToDatabaseDefault": false,
+										"header": "true"
+									}
+								},
+								"Source": {
+									"Provider": "ADLS",
+									"Location": "abfss://2021-olympic-data@2021olympicsstorage.dfs.core.windows.net/transformed-data/medals/part-00000-tid-4940459730667992049-dfb4cc65-c796-4de4-b151-6d4bdb249073-32-1-c000.csv",
+									"Properties": {
+										"LinkedServiceName": "2021-olympics-sy-WorkspaceDefaultStorage",
+										"LocationSetToDatabaseDefault": false
+									}
+								},
+								"Properties": {
+									"textinputformat.record.delimiter": ",",
+									"compression": "",
+									"derivedModelAttributeInfo": "{\"attributeReferences\":{}}"
+								},
+								"Compressed": false,
+								"SerDeInfo": null,
+								"IsStoredAsSubdirectories": false
+							},
+							"Owner": null,
+							"CreateTime": 0,
+							"LastAccessTime": 0,
+							"Retention": 0,
+							"Temporary": false,
+							"IsRewriteEnabled": false,
+							"ViewOriginalText": null,
+							"ViewExpandedText": null,
+							"Origin": {
+								"Type": "SPARK"
+							},
+							"OriginObjectId": null,
+							"IsSharedEntity": false,
+							"PublishStatus": "PUBLISHED",
+							"Properties": {
+								"Description": "",
+								"DisplayFolderInfo": "{\"name\":\"Others\",\"colorCode\":\"\"}",
+								"PrimaryKeys": "",
+								"spark.sql.sources.provider": "csv",
+								"spark.sql.sources.schema.numParts": "1",
+								"spark.sql.sources.schema.part.0": "{\"type\":\"struct\",\"fields\":[{\"name\":\"Rank\",\"type\":\"long\",\"nullable\":true,\"metadata\":{}},{\"name\":\"TeamCountry\",\"type\":\"string\",\"nullable\":true,\"metadata\":{}},{\"name\":\"Gold\",\"type\":\"long\",\"nullable\":true,\"metadata\":{}},{\"name\":\"Silver\",\"type\":\"long\",\"nullable\":true,\"metadata\":{}},{\"name\":\"Bronze\",\"type\":\"long\",\"nullable\":true,\"metadata\":{}},{\"name\":\"Total\",\"type\":\"long\",\"nullable\":true,\"metadata\":{}},{\"name\":\"RankbyTotal\",\"type\":\"long\",\"nullable\":true,\"metadata\":{}}]}"
+							},
+							"ObjectVersion": 1,
+							"ObjectId": "89a548cf-6d50-4082-a765-597f368cc4ff",
+							"Description": ""
+						},
+						"Source": {
+							"Type": "SPARK"
+						}
+					},
+					{
+						"ActionType": "CREATE",
+						"OldEntity": null,
+						"NewEntity": {
+							"Name": "teams",
+							"EntityType": "TABLE",
+							"TableType": "EXTERNAL",
+							"Namespace": {
+								"SchemaName": null,
+								"DatabaseName": "2021OlympicsDB",
+								"DatabaseId": null
+							},
+							"StorageDescriptor": {
+								"Distribution": null,
+								"Columns": [
+									{
+										"Name": "TeamName",
+										"Description": null,
+										"OriginDataTypeName": {
+											"TypeName": "string",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Length": 8000,
+											"Precision": 0,
+											"Scale": 0,
+											"Properties": {
+												"HIVE_TYPE_STRING": "string"
+											}
+										}
+									},
+									{
+										"Name": "Discipline",
+										"Description": null,
+										"OriginDataTypeName": {
+											"TypeName": "string",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Length": 8000,
+											"Precision": 0,
+											"Scale": 0,
+											"Properties": {
+												"HIVE_TYPE_STRING": "string"
+											}
+										}
+									},
+									{
+										"Name": "Country",
+										"Description": null,
+										"OriginDataTypeName": {
+											"TypeName": "string",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Length": 8000,
+											"Precision": 0,
+											"Scale": 0,
+											"Properties": {
+												"HIVE_TYPE_STRING": "string"
+											}
+										}
+									},
+									{
+										"Name": "Event",
+										"Description": null,
+										"OriginDataTypeName": {
+											"TypeName": "string",
+											"IsComplexType": false,
+											"IsNullable": true,
+											"Length": 8000,
+											"Precision": 0,
+											"Scale": 0,
+											"Properties": {
+												"HIVE_TYPE_STRING": "string"
+											}
+										}
+									}
+								],
+								"ColumnSetEntityName": "8263c6c4-0118-4b77-a541-8ba15868de00",
+								"Format": {
+									"InputFormat": "org.apache.hadoop.mapred.SequenceFileInputFormat",
+									"OutputFormat": "org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat",
+									"FormatType": "csv",
+									"SerializeLib": "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe",
+									"Properties": {
+										"path": "abfss://2021-olympic-data@2021olympicsstorage.dfs.core.windows.net/transformed-data/teams/part-00000-tid-1986096293960460157-f91822c2-03df-4b87-887b-1472b1c0cc34-34-1-c000.csv",
+										"delimiter": ",",
+										"firstRowAsHeader": "true",
+										"multiLine": "false",
+										"serialization.format": "1",
+										"FormatTypeSetToDatabaseDefault": false,
+										"header": "true"
+									}
+								},
+								"Source": {
+									"Provider": "ADLS",
+									"Location": "abfss://2021-olympic-data@2021olympicsstorage.dfs.core.windows.net/transformed-data/teams/part-00000-tid-1986096293960460157-f91822c2-03df-4b87-887b-1472b1c0cc34-34-1-c000.csv",
+									"Properties": {
+										"LinkedServiceName": "2021-olympics-sy-WorkspaceDefaultStorage",
+										"LocationSetToDatabaseDefault": false
+									}
+								},
+								"Properties": {
+									"textinputformat.record.delimiter": ",",
+									"compression": "",
+									"derivedModelAttributeInfo": "{\"attributeReferences\":{}}"
+								},
+								"Compressed": false,
+								"SerDeInfo": null,
+								"IsStoredAsSubdirectories": false
+							},
+							"Owner": null,
+							"CreateTime": 0,
+							"LastAccessTime": 0,
+							"Retention": 0,
+							"Temporary": false,
+							"IsRewriteEnabled": false,
+							"ViewOriginalText": null,
+							"ViewExpandedText": null,
+							"Origin": {
+								"Type": "SPARK"
+							},
+							"OriginObjectId": null,
+							"IsSharedEntity": false,
+							"PublishStatus": "PUBLISHED",
+							"Properties": {
+								"Description": "",
+								"DisplayFolderInfo": "{\"name\":\"Others\",\"colorCode\":\"\"}",
+								"PrimaryKeys": "",
+								"spark.sql.sources.provider": "csv",
+								"spark.sql.sources.schema.numParts": "1",
+								"spark.sql.sources.schema.part.0": "{\"type\":\"struct\",\"fields\":[{\"name\":\"TeamName\",\"type\":\"string\",\"nullable\":true,\"metadata\":{}},{\"name\":\"Discipline\",\"type\":\"string\",\"nullable\":true,\"metadata\":{}},{\"name\":\"Country\",\"type\":\"string\",\"nullable\":true,\"metadata\":{}},{\"name\":\"Event\",\"type\":\"string\",\"nullable\":true,\"metadata\":{}}]}"
+							},
+							"ObjectVersion": 1,
+							"ObjectId": "4c5d27c8-363b-48db-9356-c90d5f683240",
+							"Description": ""
+						},
+						"Source": {
+							"Type": "SPARK"
+						}
+					}
+				]
+			},
+			"dependsOn": []
+		}
+	]
+}
