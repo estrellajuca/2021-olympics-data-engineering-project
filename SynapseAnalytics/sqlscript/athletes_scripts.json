@@ -1,5 +1,5 @@
 {
-	"name": "atheltes_scripts",
+	"name": "athletes_scripts",
 	"properties": {
 		"content": {
 			"query": "-- Number of athletes by country\nSELECT Country, count(*) as Number_of_Athletes\nFROM athletes\nGROUP BY Country\nORDER BY count(*) DESC;\n\n",
