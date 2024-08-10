@@ -1,0 +1,9 @@
+{
+	"name": "2021-olympics-dataf",
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "38f061ca-4b0c-4a2e-9c90-14c6dd923f44",
+		"tenantId": "b9b9fed5-914c-4f13-9dd7-80958b6b6b9a"
+	}
+}

@@ -1,0 +1,13 @@
+{
+	"name": "entriesgenderHTTP",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "HttpServer",
+		"typeProperties": {
+			"url": "https://github.com/estrellajuca/2021-olympics-data-engineering-project/raw/main/files/EntriesGender.csv",
+			"enableServerCertificateValidation": true,
+			"authenticationType": "Anonymous"
+		}
+	}
+}
