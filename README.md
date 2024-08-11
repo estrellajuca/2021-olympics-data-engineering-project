@@ -25,7 +25,7 @@ Create a container in Data Lake Gen2 to store the raw and transformed data: <br/
 <img src="https://i.imgur.com/v2M9Wa0.png" height="80%" width="80%" />
 <br />
 <br />
-Ingest the datasets using Data Factory  <br/>
+<h1>Ingest the datasets using Data Factory</h1>
 <img src="https://i.imgur.com/yLmv3fJ.png" height="80%" width="80%" />
 <br />
 <br />
