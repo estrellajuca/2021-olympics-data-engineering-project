@@ -20,27 +20,30 @@ Then Azure Synapse Analytics was used for efficient querying and analysis.
 <h2>Project walk-through:</h2>
 
 <p align="center">
-    <span style="font-size: 18px;">Create a container in Data Lake Gen2 to store the raw and transformed data</span> <br/>
+Create a container in Data Lake Gen2 to store the raw and transformed data <br/>
 
-    <img src="https://i.imgur.com/v2M9Wa0.png" height="80%" width="80%" />
-    <br />
-    <br />
-    <span style="font-size: 18px;">Ingest the datasets using Data Factory</span> <br/>
-    <img src="https://i.imgur.com/yLmv3fJ.png" height="80%" width="80%" />
-    <br />
-    <br />
-    <span style="font-size: 18px;">Data transformations using Azure Databricks</span> <br/>
-    <img src="https://i.imgur.com/za4PKW2.png" height="80%" width="80%" />
-    <br />
-    <br />
-    <img src="https://i.imgur.com/oX6i5Le.png" height="80%" width="80%" />
-    <br />
-    <br />
-    <span style="font-size: 18px;">Use Synapse Analytics to proceed with the querying and analysis</span> <br/>
-    <img src="https://i.imgur.com/aa8DD0v.png" height="80%" width="80%" />
-    <br />
-    <br />
-</p>
+<img src="https://i.imgur.com/v2M9Wa0.png" height="80%" width="80%" />
+<br />
+<br />
+Ingest the datasets using Data Factory <br/>
+
+<img src="https://i.imgur.com/yLmv3fJ.png" height="80%" width="80%" />
+<br />
+<br />
+Data transformations using Azure Databricks <br/>
+
+<img src="https://i.imgur.com/za4PKW2.png" height="80%" width="80%" />
+<br />
+<br />
+<img src="https://i.imgur.com/oX6i5Le.png" height="80%" width="80%" />
+<br />
+<br />
+
+Use Synapse Analytics to proceed with the querying and analysis  <br/>
+
+<img src="https://i.imgur.com/aa8DD0v.png" height="80%" width="80%" />
+<br />
+<br />
 
 
 <!--
