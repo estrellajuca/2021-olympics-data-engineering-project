@@ -38,7 +38,6 @@ Data transformations using Azure Databricks <br/>
 <img src="https://i.imgur.com/oX6i5Le.png" height="80%" width="80%" />
 <br />
 <br />
-
 Use Synapse Analytics to proceed with the querying and analysis  <br/>
 
 <img src="https://i.imgur.com/aa8DD0v.png" height="80%" width="80%" />
