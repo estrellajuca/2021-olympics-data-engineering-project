@@ -25,7 +25,6 @@ Then Azure Synapse Analytics was used for efficient querying and analysis.
 <br />
 
 <p align="center">
-
 Create a container in Data Lake Gen2 to store the raw and transformed data <br/>
 
 <img src="https://i.imgur.com/v2M9Wa0.png" height="80%" width="80%" />
