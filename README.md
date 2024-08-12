@@ -19,7 +19,7 @@ Then Azure Synapse Analytics was used for efficient querying and analysis.
 
 <h2>Project walk-through:</h2>
 
-<h2>Pipeline Flow:</h2>
+<h3>Pipeline Flow:</h3>
 <img src="https://i.imgur.com/CSArfE1.png" height="80%" width="80%" />
 <br />
 <br />
