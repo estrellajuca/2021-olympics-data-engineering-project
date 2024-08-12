@@ -19,13 +19,14 @@ Then Azure Synapse Analytics was used for efficient querying and analysis.
 
 <h2>Project walk-through:</h2>
 
-<h3>Pipeline Flow:</h3>
+
+<p align="center">
+
+ <h3>Pipeline Flow:</h3>
 <img src="https://i.imgur.com/CSArfE1.png" height="80%" width="80%" />
 <br />
 <br />
 
-
-<p align="center">
 Create a container in Data Lake Gen2 to store the raw and transformed data <br/>
 
 <img src="https://i.imgur.com/v2M9Wa0.png" height="80%" width="80%" />
