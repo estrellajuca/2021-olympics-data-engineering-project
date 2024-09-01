@@ -8,7 +8,7 @@ Then Azure Synapse Analytics was used for efficient querying and analysis.
 <br />
 
 
-<h2>Languages and Utilities Used</h2>
+<h2>Tools and Services</h2>
 
 - <b>PySpark</b> 
 - <b>SQL</b>
